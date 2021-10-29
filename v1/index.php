@@ -19,8 +19,8 @@ if (isset($headers['token'])) {
                 $accion = $_GET['accion'];
                 switch ($accion) {
                     case 'users':
-                        if (isset($_GET['index']) && isset($_GET['limit'])) {
-                            $data = $operations->getUsers($_GET['index'], $_GET['limit']);
+                        if (isset($_GET['idRole']) && isset($_GET['index']) && isset($_GET['limit'])) {
+                            $data = $operations->getUsers($_GET['idRole'], $_GET['index'], $_GET['limit']);
                             if (count($data) > 0) {
                                 $respuesta['error'] = false;
                                 $respuesta['mensaje'] = 'Datos encontrados';
@@ -58,11 +58,33 @@ if (isset($headers['token'])) {
                             $respuesta['mensaje'] = 'Faltan parametros';
                         }
                         break;
+                    case 'incidence':
+                        if (isset($_GET['idIncid'])) {
+                            $data = $operations->getIncidId($_GET['idIncid']);
+                            if (count($data) > 0) {
+                                $respuesta['error'] = false;
+                                $respuesta['mensaje'] = 'Datos encontrados';
+                                $respuesta['incidences'] = $data;
+                            } else {
+                                $respuesta['error'] = true;
+                                $respuesta['mensaje'] = 'Faltan parametros';
+                            }
+                        } else {
+                            $respuesta['error'] = true;
+                            $respuesta['mensaje'] = 'Faltan parametros';
+                        }
+                        break;
                     case 'incidences':
                         if (isset($_GET['idTypeIncid']) && isset($_GET['index']) && isset($_GET['limit'])) {
-                            $count = $operations->getIncidTotal($_GET['idTypeIncid'], $_GET['index'], $_GET['limit']);
+                            $count = $operations->getIncidTotal($_GET['idTypeIncid']);
                             $data = $operations->getIncid($_GET['idTypeIncid'], $_GET['index'], $_GET['limit']);
-                            if (count($data) > 0) {
+                            $data1 = array();
+                            foreach ($data as $dat) {
+                                $solution = $operations->getSolutInciIdInci($dat['idIncid']);
+                                array_push($dat, $solution);
+                                array_push($data1, $dat);
+                            }
+                            if (count($data1) > 0) {
                                 $respuesta['error'] = false;
                                 $respuesta['mensaje'] = 'Datos encontrados';
                                 if (count($count) > 0) {
@@ -70,7 +92,7 @@ if (isset($headers['token'])) {
                                 } else {
                                     $respuesta['total'] = 0;
                                 }
-                                $respuesta['incidences'] = $data;
+                                $respuesta['incidences'] = $data1;
                             } else {
                                 $respuesta['error'] = true;
                                 $respuesta['mensaje'] = 'Faltan parametros';
@@ -96,16 +118,60 @@ if (isset($headers['token'])) {
                             $respuesta['mensaje'] = 'Faltan parametros';
                         }
                         break;
-                    case 'soluInci':
-                        if (isset($_GET['index']) && isset($_GET['limit'])) {
-                            $data = $operations->getSolutInci($_GET['index'], $_GET['limit']);
+                    case 'soluInciIdInci':
+                        if (isset($_GET['idIncid'])) {
+                            $data = $operations->getSolutInciIdInci($_GET['idIncid']);
                             if (count($data) > 0) {
                                 $respuesta['error'] = false;
                                 $respuesta['mensaje'] = 'Datos encontrados';
                                 $respuesta['soluInci'] = $data;
                             } else {
                                 $respuesta['error'] = true;
-                                $respuesta['mensaje'] = 'Faltan parametros';
+                                $respuesta['mensaje'] = 'Datos no encontrados';
+                            }
+                        } else {
+                            $respuesta['error'] = true;
+                            $respuesta['mensaje'] = 'Faltan parametros';
+                        }
+                        break;
+                    case 'solution':
+                        if (isset($_GET['idSolut'])) {
+                            $data = $operations->getSolutId($_GET['idSolut']);
+                            if (count($data) > 0) {
+                                $respuesta['error'] = false;
+                                $respuesta['mensaje'] = 'Datos encontrados';
+                                $respuesta['soluInci'] = $data;
+                            } else {
+                                $respuesta['error'] = true;
+                                $respuesta['mensaje'] = 'Datos no encontrados';
+                            }
+                        } else {
+                            $respuesta['error'] = true;
+                            $respuesta['mensaje'] = 'Faltan parametros';
+                        }
+                        break;
+                    case 'soluInci':
+                        if (isset($_GET['idTypeIncid']) && isset($_GET['index']) && isset($_GET['limit'])) {
+                            $count = $operations->getSolutInciTotal($_GET['idTypeIncid']);
+                            $data = $operations->getSolutInci($_GET['idTypeIncid'], $_GET['index'], $_GET['limit']);
+                            $data1 = array();
+                            foreach ($data as $dat) {
+                                $incidence = $operations->getIncidId($dat['idIncid']);
+                                array_push($dat, $incidence);
+                                array_push($data1, $dat);
+                            }
+                            if (count($data1) > 0) {
+                                $respuesta['error'] = false;
+                                $respuesta['mensaje'] = 'Datos encontrados';
+                                if (count($count) > 0) {
+                                    $respuesta['total'] = $count[0]['count'];
+                                } else {
+                                    $respuesta['total'] = 0;
+                                }
+                                $respuesta['soluInci'] = $data1;
+                            } else {
+                                $respuesta['error'] = true;
+                                $respuesta['mensaje'] = 'Datos no encontrados';
                             }
                         } else {
                             $respuesta['error'] = true;
@@ -125,13 +191,30 @@ if (isset($headers['token'])) {
             if (isset($_POST['accion'])) {
                 $accion = $_POST['accion'];
                 switch ($accion) {
+                    case 'createUser':
+                        if (isset($_POST['idRole']) && isset($_POST['name']) &&
+                            isset($_POST['lastName']) && isset($_POST['phone']) && isset($_POST['user']) &&
+                            isset($_POST['password'])) {
+                            if ($operations->createUser($_POST['idRole'], $_POST['name'],
+                                $_POST['lastName'], $_POST['phone'], $_POST['user'], $_POST['password'])) {
+                                $respuesta['error'] = false;
+                                $respuesta['mensaje'] = 'Usuario actualizado exitosamente';
+                            } else {
+                                $respuesta['error'] = true;
+                                $respuesta['mensaje'] = 'El Usuario no pudo ser actualizado';
+                            }
+                        } else {
+                            $respuesta['error'] = true;
+                            $respuesta['mensaje'] = 'Faltan parametros';
+                        }
+                        break;
                     case 'login':
                         if (isset($_POST['user']) && isset($_POST['password'])) {
                             $data = $operations->login($_POST['user'], $_POST['password']);
                             if (count($data) > 0) {
                                 $respuesta['error'] = false;
                                 $respuesta['mensaje'] = 'Login correcto';
-                                $respuesta['login'] = $data;
+                                $respuesta['users'] = $data;
                             } else {
                                 $respuesta['error'] = true;
                                 $respuesta['mensaje'] = 'Usuario y/o contraseña incorrecta';
@@ -188,6 +271,23 @@ if (isset($headers['token'])) {
             if (isset($put_vars['accion'])) {
                 $accion = $put_vars['accion'];
                 switch ($accion) {
+                    case 'updaUser':
+                        if (isset($put_vars['idUser']) && isset($put_vars['idRole']) && isset($put_vars['name']) &&
+                            isset($put_vars['lastName']) && isset($put_vars['phone']) && isset($put_vars['user']) &&
+                            isset($put_vars['password'])) {
+                            if ($operations->updaUser($put_vars['idUser'], $put_vars['idRole'], $put_vars['name'],
+                                $put_vars['lastName'], $put_vars['phone'], $put_vars['user'], $put_vars['password'])) {
+                                $respuesta['error'] = false;
+                                $respuesta['mensaje'] = 'Usuario actualizado exitosamente';
+                            } else {
+                                $respuesta['error'] = true;
+                                $respuesta['mensaje'] = 'El Usuario no pudo ser actualizado';
+                            }
+                        } else {
+                            $respuesta['error'] = true;
+                            $respuesta['mensaje'] = 'Faltan parametros';
+                        }
+                        break;
                     case 'updaPassw':
                         if (isset($put_vars['idUser']) && isset($put_vars['user']) &&
                             isset($put_vars['oldPassword']) && isset($put_vars['newPassword'])) {

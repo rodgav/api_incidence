@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Lima');
+setlocale(LC_TIME, 'spanish');
 
 require_once dirname(__FILE__) . '/conexion.php';
 
@@ -36,11 +38,52 @@ class Operaciones
         //print_r($errorInfo);
     }
 
-    public function getUsers($index, $limit)
+    public function createUser($idRole, $name, $lastName, $phone, $user, $password)
     {
-        $stmt = $this->con->prepare('call getUsers(?,?)');
-        $stmt->bindParam(1, $index, PDO::PARAM_INT);
-        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt = $this->con->prepare('call createUser(?,?,?,?,?,?)');
+        $stmt->bindParam(1, $idRole, PDO::PARAM_INT);
+        $stmt->bindParam(2, $name);
+        $stmt->bindParam(3, $lastName);
+        $stmt->bindParam(4, $phone);
+        $stmt->bindParam(5, $user);
+        $stmt->bindParam(6, $password);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        if ($stmt->rowCount() > 0) {
+            $this->closeStmt($stmt);
+            $this->closeCon();
+            return true;
+        }
+        return false;
+    }
+
+    public function updaUser($idUser, $idRole, $name, $lastName, $phone, $user, $password)
+    {
+        $stmt = $this->con->prepare('call updaUser(?,?,?,?,?,?,?)');
+        $stmt->bindParam(1, $idUser, PDO::PARAM_INT);
+        $stmt->bindParam(2, $idRole, PDO::PARAM_INT);
+        $stmt->bindParam(3, $name);
+        $stmt->bindParam(4, $lastName);
+        $stmt->bindParam(5, $phone);
+        $stmt->bindParam(6, $user);
+        $stmt->bindParam(7, $password);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        if ($stmt->rowCount() > 0) {
+            $this->closeStmt($stmt);
+            $this->closeCon();
+            return true;
+        }
+        return false;
+    }
+
+    public function getUsers($idRole, $index, $limit)
+    {
+        $idRole = '%' . $idRole . '%';
+        $stmt = $this->con->prepare('call getUsers(?,?,?)');
+        $stmt->bindParam(1, $idRole);
+        $stmt->bindParam(2, $index, PDO::PARAM_INT);
+        $stmt->bindParam(3, $limit, PDO::PARAM_INT);
         $stmt->execute();
         $this->printError($stmt->errorInfo());
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -113,13 +156,22 @@ class Operaciones
         return $data;
     }
 
-    public function getIncidTotal($idTypeIncid, $index, $limit)
+    public function getIncidId($idIncid)
+    {
+        $stmt = $this->con->prepare('call getIncidId(?)');
+        $stmt->bindParam(1, $idIncid);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->closeStmt($stmt);
+        return $data;
+    }
+
+    public function getIncidTotal($idTypeIncid)
     {
         $idTypeIncid = '%' . $idTypeIncid . '%';
-        $stmt = $this->con->prepare('call getIncidTotal(?,?,?)');
+        $stmt = $this->con->prepare('call getIncidTotal(?)');
         $stmt->bindParam(1, $idTypeIncid);
-        $stmt->bindParam(2, $index, PDO::PARAM_INT);
-        $stmt->bindParam(3, $limit, PDO::PARAM_INT);
         $stmt->execute();
         $this->printError($stmt->errorInfo());
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -225,11 +277,47 @@ class Operaciones
         return false;
     }
 
-    public function getSolutInci($index, $limit)
+    public function getSolutInciIdInci($idInci)
     {
-        $stmt = $this->con->prepare('call getSolutInci(?,?)');
-        $stmt->bindParam(1, $index, PDO::PARAM_INT);
-        $stmt->bindParam(2, $limit, PDO::PARAM_INT);
+        $stmt = $this->con->prepare('call getSolutInciIdInci(?)');
+        $stmt->bindParam(1, $idInci, PDO::PARAM_INT);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->closeStmt($stmt);
+        return $data;
+    }
+
+    public function getSolutInciTotal($idTypeIncid)
+    {
+        $idTypeIncid = '%' . $idTypeIncid . '%';
+        $stmt = $this->con->prepare('call getSolutInciTotal(?)');
+        $stmt->bindParam(1, $idTypeIncid);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->closeStmt($stmt);
+        return $data;
+    }
+
+    public function getSolutId($idSolut)
+    {
+        $stmt = $this->con->prepare('call getSolutId(?)');
+        $stmt->bindParam(1, $idSolut, PDO::PARAM_INT);
+        $stmt->execute();
+        $this->printError($stmt->errorInfo());
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->closeStmt($stmt);
+        return $data;
+    }
+
+    public function getSolutInci($idTypeIncid, $index, $limit)
+    {
+        $idTypeIncid = '%' . $idTypeIncid . '%';
+        $stmt = $this->con->prepare('call getSolutInci(?,?,?)');
+        $stmt->bindParam(1, $idTypeIncid);
+        $stmt->bindParam(2, $index, PDO::PARAM_INT);
+        $stmt->bindParam(3, $limit, PDO::PARAM_INT);
         $stmt->execute();
         $this->printError($stmt->errorInfo());
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
