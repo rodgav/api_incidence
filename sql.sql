@@ -68,11 +68,44 @@ alter table solutInci
     add constraint idIncid_incid foreign key (idIncid) references incidence (id) on update restrict on delete restrict;
 
 delimiter $
-create procedure getUsers(_index int, _limit int)
+create procedure createUser(_idRole int, _name varchar(50), _lastName varchar(50), _phone varchar(9), _user varchar(50),
+                            _password varchar(50))
 begin
-select u.id as id, r.name as role, u.name as name, u.lastName as lastName, u.user as user
+insert into users (idRole, name, lastName, phone, user, password)
+values (_idRole, _name, _lastName, _phone, _password, _user);
+end;
+$
+delimiter ;
+
+delimiter $
+create procedure updaUser(_idUser int, _idRole int, _name varchar(50), _lastName varchar(50), _phone varchar(9),
+                          _user varchar(50), _password varchar(50))
+begin
+update users
+set idRole   = _idRole,
+    name     = _name,
+    lastName = _lastName,
+    phone    = _phone,
+    user     = _user,
+    password = _password
+where id like _idUser;
+end;
+$
+delimiter ;
+
+delimiter $
+create procedure getUsers(_idRole varchar(5), _index int, _limit int)
+begin
+select u.id       as id,
+       r.name     as role,
+       u.name     as name,
+       u.lastName as lastName,
+       u.phone    as phone,
+       u.user     as user,
+           u.active   as active
 from users u
     inner join role r on u.idRole = r.id
+where u.idRole like _idRole
 order by id desc
     limit _index,_limit;
 end;
@@ -82,7 +115,13 @@ delimiter ;
 delimiter $
 create procedure login(_user varchar(50), _password varchar(50))
 begin
-select u.id as id, r.name as role, u.name as name, u.lastName as lastName, u.user as user
+select u.id       as id,
+       r.name     as role,
+       u.name     as name,
+       u.lastName as lastName,
+       u.phone    as phone,
+       u.user     as user,
+           u.active   as active
 from users u
     inner join role r on u.idRole = r.id
 where user like _user
@@ -147,23 +186,43 @@ $
 delimiter ;
 
 delimiter $
-create procedure getIncidTotal(_idTypeIncid varchar(5),_index int, _limit int)
+create procedure getIncidTotal(_idTypeIncid varchar(5))
 begin
 select count(*) as count
 from incidence i
     inner join typeIncid ti on i.idTypeIncid = ti.id
     inner join users u on i.idUser = u.id
-where i.idTypeIncid like _idTypeIncid
-order by dateModifi desc
-    limit _index,_limit;
+where i.idTypeIncid like _idTypeIncid;
 end;
 $
 delimiter ;
 
 delimiter $
-create procedure getIncid(_idTypeIncid varchar(5),_index int, _limit int)
+create procedure getIncidId(_idIncid int)
 begin
-select u.name        as name,
+select i.id          as idIncid,
+       u.name        as name,
+       u.lastName    as lastName,
+       u.phone       as phone,
+       ti.name       as typeIncid,
+       i.title       as title,
+       i.description as description,
+       i.pdfURL      as pdfURL,
+       i.dateCreate  as dateCreate,
+       i.dateModifi  as dateModifi
+from incidence i
+         inner join typeIncid ti on i.idTypeIncid = ti.id
+         inner join users u on i.idUser = u.id
+where i.id like _idIncid;
+end;
+$
+delimiter ;
+
+delimiter $
+create procedure getIncid(_idTypeIncid varchar(5), _index int, _limit int)
+begin
+select i.id          as idIncid,
+       u.name        as name,
        u.lastName    as lastName,
        u.phone       as phone,
        ti.name       as typeIncid,
@@ -208,9 +267,11 @@ $
 delimiter ;
 
 delimiter $
-create procedure getSolutInci(_index int, _limit int)
+create procedure getSolutInciIdInci(_idInci int)
 begin
-select u.name         as name,
+select si.idIncid     as idIncid,
+       si.id          as idSolution,
+       u.name         as name,
        u.lastName     as lastName,
        u.phone        as phone,
        si.title       as title,
@@ -220,7 +281,63 @@ select u.name         as name,
        si.dateModifi  as dateModifi
 from solutInci si
          inner join users u on si.idUser = u.id
-order by dateModifi desc
+where si.idIncid like _idInci;
+end;
+$
+delimiter ;
+
+delimiter $
+create procedure getSolutInciTotal(_idTypeIncid varchar(5))
+begin
+select count(*) as count
+from solutInci si
+    inner join incidence i on si.idIncid = i.id
+    inner join users u on si.idUser = u.id
+where i.idTypeIncid like _idTypeIncid;
+end;
+$
+delimiter ;
+
+
+delimiter $
+create procedure getSolutId(_idSolut int)
+begin
+select si.idIncid     as idIncid,
+       si.id          as idSolution,
+       u.name         as name,
+       u.lastName     as lastName,
+       u.phone        as phone,
+       si.title       as title,
+       si.description as description,
+       si.pdfURL      as pdfUrl,
+       si.dateCreate  as dateCreate,
+       si.dateModifi  as dateModifi
+from solutInci si
+         inner join users u on si.idUser = u.id
+         inner join incidence i on si.idIncid = i.id
+where si.id like _idSolut;
+end;
+$
+delimiter ;
+
+delimiter $
+create procedure getSolutInci(_idTypeIncid varchar(5), _index int, _limit int)
+begin
+select si.idIncid     as idIncid,
+       si.id          as idSolution,
+       u.name         as name,
+       u.lastName     as lastName,
+       u.phone        as phone,
+       si.title       as title,
+       si.description as description,
+       si.pdfURL      as pdfUrl,
+       si.dateCreate  as dateCreate,
+       si.dateModifi  as dateModifi
+from solutInci si
+         inner join users u on si.idUser = u.id
+         inner join incidence i on si.idIncid = i.id
+where i.idTypeIncid like _idTypeIncid
+    order by dateModifi desc
     limit _index,_limit;
 end;
 $
@@ -251,4 +368,68 @@ $
 delimiter ;
 
 insert into users (idRole, name, lastName, phone, user, password, active)
-values (1, 'rodolfo', 'gavilan', '961266733', 'admin@gmail.com', '3UJBeGmgxKCkHpQdQB4ZtgwkxIHJnU+e7br24M2XCUE=', 1)
+values (1, 'rodolfo', 'gavilan', '961266733', 'admin@gmail.com', '3UJBeGmgxKCkHpQdQB4ZtgwkxIHJnU+e7br24M2XCUE=', 1);
+
+insert into incidence (idTypeIncid, idUser, title, description, pdfURL)
+values (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf'),
+       (1, 1, 'titulo de prueba 1', 'descripción 1',
+        'http://192.168.1.33/api_incidence/pdfs/incidences/20211028051053.pdf');
