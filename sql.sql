@@ -72,7 +72,7 @@ create procedure createUser(_idRole int, _name varchar(50), _lastName varchar(50
                             _password varchar(50))
 begin
 insert into users (idRole, name, lastName, phone, user, password)
-values (_idRole, _name, _lastName, _phone, _password, _user);
+values (_idRole, _name, _lastName, _phone, _user, _password);
 end;
 $
 delimiter ;
